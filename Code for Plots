@@ -1,0 +1,66 @@
+setwd("/Users/tabitharucker/Desktop/PhDEpiExp/Proteomics/MeladMassSpec/IP")
+Cell <- read.csv("/Users/tabitharucker/Desktop/PhDEpiExp/Proteomics/MeladMassSpec/IP/NewestTableMelad_cell_cortex_DIV18.csv")
+Cortex <- read.csv("/Users/tabitharucker/Desktop/PhDEpiExp/Proteomics/MeladMassSpec/IP/NewestTableMelad_cell_cortex_DIV18.csv")
+DiV18 <-read.csv("/Users/tabitharucker/Desktop/PhDEpiExp/Proteomics/MeladMassSpec/IP/NewestTableMelad_cell_cortex_DIV18.csv")
+Cell <- Cell
+Cortex <- Cortex
+DiV18 <- DIV18
+Venn <- list("N2a cells overexpressing TaoK2β"=Cell$'Gene Symbol', Cortex=Cortex$'Gene Symbol', "Neurons (DIV18)"=DiV18$'Gene.Symbol')
+str(Venn)
+
+# Used code for 
+# Figure 1:
+
+VV <- clusterProfiler::compareCluster(geneCluster = Venn, fun = enrichGO,
+                                      pvalueCutoff  = 0.05,
+                                      OrgDb='org.Mm.eg.db', keyType="SYMBOL")
+p <- cnetplot(VV, showCategory = 3, layout="kk", cex_category = 5, cex_label_category =1, 
+         cex_gene = 1.5, cex_label_gene=1.25, 
+         shadowtext = "gene", 
+         node_label= "gene" 
+)+
+  #theme_void()+
+  labs(title = "GOterm enrichment across clusters")+
+  theme(legend.position="bottom")
+write.csv(p$data, file="Plot.csv")
+io <- read.csv("/Users/tabitharucker/Desktop/PhDEpiExp/Proteomics/MeladMassSpec/IP/Plot.csv")
+head(io)
+p$data$new1 <- io$Description
+p$data$new2 <- io$genes
+p+ #geom_node_text(aes_(x=~x,y=~y,label = ~new2))+
+  geom_label_repel(aes_(x=~x,y=~y,label = ~new1), size=3)
+
+
+# Supplementary figure 1:
+
+VV <- clusterProfiler::compareCluster(geneCluster = Venn, fun = enrichGO,
+                                      pvalueCutoff  = 1,
+                                      OrgDb='org.Mm.eg.db', keyType="SYMBOL")
+excludeCCdown <- data.frame("ID" = VV@compareClusterResult$ID, "name" = VV@compareClusterResult$Description)
+selected_pathways1 <- excludeCCdown$name[grep(pattern = "translat", excludeCCdown$name )]
+selected_pathways2 <- excludeCCdown$name[grep(pattern = "RNA", excludeCCdown$name )]
+selected_pathways3 <- excludeCCdown$name[grep(pattern = "ribo", excludeCCdown$name )]
+selected_pathways4 <- excludeCCdown$name[grep(pattern = "DNA", excludeCCdown$name )]
+#pattern = "translat", "RNA", "ribo", "DNA"
+e <- cbind(selected_pathways1, selected_pathways2, selected_pathways3, selected_pathways4)
+VV@compareClusterResult <- VV@compareClusterResult[VV@compareClusterResult$Description%in%e,]
+
+options(enrichplot.colours = c("#b3eebe", "#46bac2", "#371ea3", "#95608e"),
+        guide=guide_colorbar(reverse=TRUE, order=1))
+enrichplot::dotplot(VV, showCategory=10,x="Cluster", 
+                    by = "count", font.size = 10, size = "count",
+                    includeAll = T) +   xlab(NULL) +
+  ggtitle("Translational involvement")+
+  guides(size = guide_legend(override.aes=list(shape=1))) +
+  theme(panel.grid.major.y = element_line(linetype='dotted', color='#808080'),
+        panel.grid.major.x = element_blank(),
+        axis.text.x = element_text(angle = 0, vjust = 0.5, hjust=0.5),
+        strip.background = element_blank(),
+        axis.text.y = element_text(size = 9),
+        legend.text = element_text(size = 10),
+        legend.title = element_text(size = 12, face = "bold"),
+        legend.key = element_rect(colour = NA, fill = NA),
+        axis.title = element_text(size = 15, face = "bold"),
+        #panel.border = element_blank(),
+        panel.spacing.x = unit(0,"line"),
+        plot.title = element_text(hjust = 0.5,  size = 15, face = "bold"))
