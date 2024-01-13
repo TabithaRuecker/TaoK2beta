@@ -1,5 +1,5 @@
 # TaoK2beta
-Manuscript
+Repository for the manuscript
 "The autism susceptibility kinase, TaoK2, phosphorylates eEF2 and modulates Translation"
 
 
